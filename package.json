@@ -1,12 +1,14 @@
 {
   "name": "facemetrics-ai",
   "version": "1.0.0",
+  "private": true,
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:web": "expo export --platform web"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.6",
@@ -38,6 +40,5 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "typescript": "~5.9.2"
-  },
-  "private": true
+  }
 }

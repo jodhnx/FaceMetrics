@@ -1,24 +1,29 @@
 ﻿# FaceMetrics AI
 
-Premium Mobile-First App fuer Gesichtsanalyse (Symmetrie, Proportionen, Landmarken).
+Premium Mobile-First PWA fuer Gesichtsanalyse.
 
-## Start
+## Lokal
 
 ```bash
-cd C:\Users\benst\projects\Face-Metrics
+npm install
 npm start
 ```
 
-- Android / iOS ueber Expo Go
-- Web optional (Mobile-Frame, max. 430px)
+## PWA Build & Deploy (Vercel)
 
-## v2
+```bash
+npm run build:web
+```
 
-- Dark Mode standardmaessig
-- 30+ Messwerte mit Detailseiten
-- Interaktive Heatmap
-- AI Coach + evidenzbasierte Uebungen
-- Fortschritt: Verlauf, Vorher/Nachher, Gewicht
-- Klare Disclaimers auf allen Analyse-Seiten
+\ercel.json\ leitet alle Routen auf \/\ (SPA) um – kein 404 bei Refresh oder Home-Screen.
+
+Enthalten:
+- \public/manifest.json\ (start_url: \/\, standalone)
+- Service Worker \public/sw.js\
+- Icons 192 / 512 / Apple Touch / maskable
+- Splash Screen + Theme Color \#07080A\
+- \iewport-fit=cover\ fuer iPhone Safe Area
+
+## Hinweis
 
 Alle Scores sind KI-Schaetzungen. Keine objektive Schoenheit. Keine medizinischen Versprechen.

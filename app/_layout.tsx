@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { AnalysisProvider } from '@/context/AnalysisContext';
+import { RegisterServiceWorker } from '@/components/RegisterServiceWorker';
 
 function RootNavigator() {
   const { isDark, colors } = useTheme();
@@ -11,6 +12,7 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
+      <RegisterServiceWorker />
       <Stack
         screenOptions={{
           headerShown: false,

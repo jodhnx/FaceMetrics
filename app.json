@@ -1,25 +1,53 @@
 {
   "expo": {
-    "name": "Face-Metrics",
-    "slug": "Face-Metrics",
+    "name": "FaceMetrics AI",
+    "slug": "facemetrics-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "scheme": "facemetrics",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "ai.facemetrics.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FaceMetrics AI benötigt die Kamera, um dein Gesicht für die Analyse zu fotografieren.",
+        "NSPhotoLibraryUsageDescription": "FaceMetrics AI benötigt Zugriff auf deine Fotos, um ein frontales Gesichtsbild zu analysieren."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B0B0F",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES"
+      ],
+      "package": "ai.facemetrics.app",
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-splash-screen",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FaceMetrics AI benötigt Zugriff auf deine Fotos für die Gesichtsanalyse.",
+          "cameraPermission": "FaceMetrics AI benötigt die Kamera für die Gesichtsanalyse."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }

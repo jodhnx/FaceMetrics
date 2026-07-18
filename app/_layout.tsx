@@ -24,6 +24,7 @@ function RootNavigator() {
         <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="analyzing" options={{ gestureEnabled: false, animation: 'fade' }} />
+        <Stack.Screen name="live-scan" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="results/[id]" />
         <Stack.Screen name="metric/[id]" />
         <Stack.Screen name="exercise/[id]" />

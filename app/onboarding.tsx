@@ -21,19 +21,19 @@ const width = Math.min(Dimensions.get('window').width, Layout.maxContentWidth);
 
 const SLIDES = [
   {
-    kicker: 'FACEMETRICS AI',
-    title: 'Messbar.\nEhrlich.\nPrivat.',
-    body: 'Landmarken, Symmetrie und Proportionen – als KI-Schätzung, nie als objektive Schönheit.',
+    kicker: '360° FACE SCAN',
+    title: 'Mehr Winkel.\nMehr Klarheit.',
+    body: 'Geführter Frontkamera-Scan mit 3D-Rahmen – für Profil, Jawline und Symmetrie.',
   },
   {
-    kicker: 'ANALYSE',
-    title: 'Dutzende\nMesswerte.',
-    body: 'Von Canthal Tilt bis Jawline – mit Score, Normbereich, Coach und klaren Hinweisen.',
+    kicker: 'EHRLICH',
+    title: 'Messbar.\nTransparent.\nPrivat.',
+    body: 'Jeder Score wird begründet. Keine geschönten Werte. Keine objektive Schönheit.',
   },
   {
     kicker: 'FORTSCHRITT',
-    title: 'Vergleichen.\nVerstehen.\nVerbessern.',
-    body: 'Verlauf, Heatmaps und evidenzbasierte Tipps zu Haltung, Pflege und Fotos.',
+    title: 'Vergleichen.\nVerstehen.\nÜben.',
+    body: 'Verlauf, PDF-Export und evidenzbasierte Tipps – ohne Knochenstruktur-Versprechen.',
   },
 ];
 

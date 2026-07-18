@@ -20,14 +20,6 @@ import { useAnalysis } from '@/context/AnalysisContext';
 import { useTheme } from '@/context/ThemeContext';
 import { DISCLAIMERS, Layout, Radii, Spacing, Typography } from '@/constants/theme';
 
-const CHECKS = [
-  { icon: 'person' as const, label: 'Gesicht vollständig sichtbar' },
-  { icon: 'phone-portrait' as const, label: 'Kopf gerade & frontal' },
-  { icon: 'sunny' as const, label: 'Gute, gleichmäßige Beleuchtung' },
-  { icon: 'eye-off' as const, label: 'Keine Sonnenbrille' },
-  { icon: 'happy' as const, label: 'Neutraler Gesichtsausdruck' },
-];
-
 export default function ScanScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -76,13 +68,41 @@ export default function ScanScreen() {
           paddingHorizontal: Layout.screenPadding,
         }}
       >
-        <Text style={[Typography.overline, { color: colors.accent }]}>SCAN</Text>
-        <Text style={[Typography.title1, { color: colors.text }]}>Qualitätscheck</Text>
+        <Text style={[Typography.overline, { color: colors.accent }]}>SCAN v3</Text>
+        <Text style={[Typography.title1, { color: colors.text }]}>Face Scan</Text>
         <Text style={[Typography.body, { color: colors.textSecondary, marginTop: Spacing.sm }]}>
-          Vor der Analyse prüfen wir Frontalität, Haltung und Licht.
+          Für die genaueste Auswertung: 360°-Scan mit Frontkamera.
         </Text>
 
-        <Animated.View entering={FadeIn} style={{ marginTop: Spacing.lg }}>
+        <GlassCard style={{ marginTop: Spacing.lg }}>
+          <View style={styles.heroRow}>
+            <View style={[styles.iconBubble, { backgroundColor: colors.accentDim }]}>
+              <Ionicons name="scan-circle" size={36} color={colors.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[Typography.title3, { color: colors.text }]}>360° Face Scan</Text>
+              <Text style={[Typography.footnote, { color: colors.textSecondary, marginTop: 4 }]}>
+                Geführte Kopfbewegung · 3D-Rahmen · Profil & Jawline
+              </Text>
+            </View>
+          </View>
+          <PrimaryButton
+            title="360° Scan starten"
+            onPress={() => router.push('/live-scan' as any)}
+            style={{ marginTop: Spacing.md }}
+          />
+        </GlassCard>
+
+        <Text
+          style={[
+            Typography.caption,
+            { color: colors.textTertiary, marginTop: Spacing.lg, marginBottom: Spacing.sm },
+          ]}
+        >
+          ODER EINZELNES FOTO
+        </Text>
+
+        <Animated.View entering={FadeIn}>
           {preview ? (
             <Image
               source={{ uri: preview }}
@@ -95,10 +115,9 @@ export default function ScanScreen() {
                 { borderColor: colors.borderStrong, backgroundColor: colors.surfaceSolid },
               ]}
             >
-              <View style={[styles.guide, { borderColor: colors.accent }]} />
-              <Ionicons name="scan" size={40} color={colors.accent} />
-              <Text style={[Typography.callout, { color: colors.textSecondary, marginTop: Spacing.sm }]}>
-                Gesicht in den Rahmen
+              <Ionicons name="image-outline" size={32} color={colors.textSecondary} />
+              <Text style={[Typography.callout, { color: colors.textSecondary, marginTop: 8 }]}>
+                Frontales Foto
               </Text>
             </View>
           )}
@@ -106,55 +125,24 @@ export default function ScanScreen() {
 
         {error ? (
           <GlassCard style={{ marginTop: Spacing.md }}>
-            <View style={{ flexDirection: 'row', gap: Spacing.sm, alignItems: 'center' }}>
-              <Ionicons name="alert-circle" size={24} color={colors.danger} />
-              <Text style={[Typography.callout, { color: colors.danger, flex: 1, fontWeight: '700' }]}>
-                {error}
-              </Text>
-            </View>
-            <Text style={[Typography.footnote, { color: colors.textSecondary, marginTop: Spacing.sm }]}>
-              Bitte neues Bild aufnehmen.
+            <Text style={[Typography.callout, { color: colors.danger, fontWeight: '700' }]}>
+              {error}
             </Text>
           </GlassCard>
         ) : null}
 
-        <View style={{ gap: Spacing.sm, marginTop: Spacing.lg }}>
-          <PrimaryButton title="Kamera öffnen" onPress={() => pick('camera')} />
-          <PrimaryButton title="Aus Galerie" variant="secondary" onPress={() => pick('library')} />
+        <View style={{ gap: Spacing.sm, marginTop: Spacing.md }}>
+          <PrimaryButton title="Kamera (Foto)" variant="secondary" onPress={() => pick('camera')} />
+          <PrimaryButton title="Aus Galerie" variant="ghost" onPress={() => pick('library')} />
           {preview ? (
             <PrimaryButton
-              title="Analyse starten"
+              title="Foto analysieren"
               onPress={() => router.push({ pathname: '/analyzing', params: { uri: preview } })}
             />
-          ) : (
-            <PrimaryButton
-              title="Demo ohne Foto"
-              variant="ghost"
-              onPress={() =>
-                router.push({
-                  pathname: '/analyzing',
-                  params: { uri: `demo://sample/${Date.now()}` },
-                })
-              }
-            />
-          )}
+          ) : null}
         </View>
 
-        <GlassCard style={{ marginTop: Spacing.lg }}>
-          <Text style={[Typography.title3, { color: colors.text, marginBottom: Spacing.sm }]}>
-            Checkliste
-          </Text>
-          {CHECKS.map((c) => (
-            <View key={c.label} style={styles.checkRow}>
-              <View style={[styles.checkIcon, { backgroundColor: colors.accentDim }]}>
-                <Ionicons name={c.icon} size={16} color={colors.accent} />
-              </View>
-              <Text style={[Typography.callout, { color: colors.text }]}>{c.label}</Text>
-            </View>
-          ))}
-        </GlassCard>
-
-        <View style={{ marginTop: Spacing.md }}>
+        <View style={{ marginTop: Spacing.lg }}>
           <DisclaimerBanner text={DISCLAIMERS.analysis} />
         </View>
       </ScrollView>
@@ -163,39 +151,25 @@ export default function ScanScreen() {
 }
 
 const styles = StyleSheet.create({
+  heroRow: { flexDirection: 'row', gap: Spacing.md, alignItems: 'center' },
+  iconBubble: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   preview: {
     width: '100%',
-    height: 380,
+    height: 260,
     borderRadius: Radii.lg,
     borderWidth: StyleSheet.hairlineWidth,
   },
   placeholder: {
-    height: 340,
+    height: 160,
     borderRadius: Radii.lg,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  guide: {
-    position: 'absolute',
-    width: '62%',
-    height: '72%',
-    borderRadius: 999,
-    borderWidth: 1.5,
-    opacity: 0.35,
-  },
-  checkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: 10,
-  },
-  checkIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },

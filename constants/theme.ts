@@ -106,4 +106,6 @@ export const DISCLAIMERS = {
     'Gesichtsübungen verändern keine Knochenstruktur oder genetischen Merkmale. Gut belegt sind u. a. Haltung, Hautpflege und Gewichtsmanagement; andere Methoden haben begrenzte Evidenz.',
   general:
     'Ergebnisse sind Schätzungen auf Basis messbarer Gesichtsmerkmale und keine Aussage darüber, wie einzelne Menschen dich wahrnehmen.',
+  perception:
+    'Diese Einschätzung ist eine statistische Simulation auf Basis von Gesichtsproportionen, Symmetrie und wissenschaftlichen Erkenntnissen. Menschen nehmen Gesichter unterschiedlich wahr.',
 };

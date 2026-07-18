@@ -124,9 +124,52 @@ export default function ProgressScreen() {
                 </View>
                 <Text style={[Typography.footnote, { color: colors.textSecondary, marginTop: Spacing.sm }]}>
                   Symmetrie {(delta?.symmetry ?? 0) >= 0 ? '+' : ''}
-                  {delta?.symmetry} · Proportionen {(delta?.proportions ?? 0) >= 0 ? '+' : ''}
-                  {delta?.proportions}
+                  {delta?.symmetry} · Jawline {(delta?.jawline ?? 0) >= 0 ? '+' : ''}
+                  {delta?.jawline} · Haut {(delta?.skin ?? 0) >= 0 ? '+' : ''}
+                  {delta?.skin}
                 </Text>
+              </GlassCard>
+            ) : null}
+
+            {history.length > 1 ? (
+              <GlassCard style={{ marginTop: Spacing.md }}>
+                <Text style={[Typography.title3, { color: colors.text }]}>Entwicklungen</Text>
+                <Text style={[Typography.footnote, { color: colors.textSecondary, marginTop: 4 }]}>
+                  Symmetrie / Jawline / Haut (letzte Scans)
+                </Text>
+                <View style={{ marginTop: Spacing.sm }}>
+                  <Text style={[Typography.caption, { color: colors.textTertiary }]}>Symmetrie</Text>
+                  <TrendSparkline
+                    values={history
+                      .slice(0, 10)
+                      .map((h) => h.symmetryScore)
+                      .reverse()}
+                    width={300}
+                    height={40}
+                  />
+                </View>
+                <View style={{ marginTop: Spacing.sm }}>
+                  <Text style={[Typography.caption, { color: colors.textTertiary }]}>Jawline</Text>
+                  <TrendSparkline
+                    values={history
+                      .slice(0, 10)
+                      .map((h) => h.jawlineScore ?? h.overallScore)
+                      .reverse()}
+                    width={300}
+                    height={40}
+                  />
+                </View>
+                <View style={{ marginTop: Spacing.sm }}>
+                  <Text style={[Typography.caption, { color: colors.textTertiary }]}>Haut</Text>
+                  <TrendSparkline
+                    values={history
+                      .slice(0, 10)
+                      .map((h) => h.skinScore ?? 70)
+                      .reverse()}
+                    width={300}
+                    height={40}
+                  />
+                </View>
               </GlassCard>
             ) : null}
 
@@ -166,9 +209,17 @@ export default function ProgressScreen() {
                       </View>
                     )}
                     <View style={{ flex: 1 }}>
-                      <Text style={[Typography.callout, { color: colors.text, fontWeight: '700' }]}>
-                        Score {item.overallScore}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[Typography.callout, { color: colors.text, fontWeight: '700' }]}>
+                          Score {item.overallScore}
+                        </Text>
+                        {item.favorite ? (
+                          <Ionicons name="star" size={14} color={colors.warning} />
+                        ) : null}
+                        {item.scanType === '360' ? (
+                          <Text style={[Typography.caption, { color: colors.accent }]}>360°</Text>
+                        ) : null}
+                      </View>
                       <Text style={[Typography.caption, { color: colors.textSecondary }]}>
                         {formatDate(item.createdAt)}
                       </Text>

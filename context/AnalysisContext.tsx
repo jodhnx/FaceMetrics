@@ -1,8 +1,13 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import type { AnalysisResult } from '@/types/analysis';
+import type { AnalysisResult, ScanCapture } from '@/types/analysis';
 import { analyzeFace, checkImageQuality } from '@/services/analysisEngine';
 import { getHistory, saveAnalysis } from '@/services/storage';
 import { useTheme } from '@/context/ThemeContext';
+
+interface RunOptions {
+  scanType?: 'photo' | '360';
+  captures?: ScanCapture[];
+}
 
 interface AnalysisContextValue {
   current: AnalysisResult | null;
@@ -11,7 +16,7 @@ interface AnalysisContextValue {
   error: string | null;
   setCurrent: (r: AnalysisResult | null) => void;
   refreshHistory: () => Promise<void>;
-  runAnalysis: (imageUri: string) => Promise<AnalysisResult | null>;
+  runAnalysis: (imageUri: string, options?: RunOptions) => Promise<AnalysisResult | null>;
   clearError: () => void;
 }
 
@@ -29,17 +34,19 @@ export function AnalysisProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const runAnalysis = useCallback(
-    async (imageUri: string) => {
+    async (imageUri: string, options?: RunOptions) => {
       setError(null);
       const quality = checkImageQuality(imageUri);
       if (!quality.passed) {
-        setError(quality.message ?? 'Bitte neues Bild aufnehmen.');
+        setError(quality.message ?? 'Bitte neuen Scan starten.');
         return null;
       }
       setIsAnalyzing(true);
       try {
-        const result = await analyzeFace(imageUri);
-        const stored = settings.autoDeletePhotos ? { ...result, imageUri: '' } : result;
+        const result = await analyzeFace(imageUri, options);
+        const stored = settings.autoDeletePhotos
+          ? { ...result, imageUri: '', captures: undefined }
+          : result;
         await saveAnalysis(stored, settings);
         setCurrent(stored);
         await refreshHistory();

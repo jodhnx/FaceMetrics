@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AnalysisResult, AppSettings, WeightEntry } from '@/types/analysis';
 
-const HISTORY_KEY = '@facemetrics/history_v2';
+const HISTORY_KEY = '@facemetrics/history_v3';
 const SETTINGS_KEY = '@facemetrics/settings_v2';
 const ONBOARDING_KEY = '@facemetrics/onboarding_v2';
 const WEIGHT_KEY = '@facemetrics/weight';
@@ -43,6 +43,7 @@ export async function saveAnalysis(result: AnalysisResult, settings?: AppSetting
   const toStore: AnalysisResult = {
     ...result,
     imageUri: cfg.autoDeletePhotos ? '' : result.imageUri,
+    captures: cfg.autoDeletePhotos ? undefined : result.captures,
   };
   await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify([toStore, ...history].slice(0, 60)));
 }
@@ -50,6 +51,18 @@ export async function saveAnalysis(result: AnalysisResult, settings?: AppSetting
 export async function getAnalysisById(id: string): Promise<AnalysisResult | null> {
   const history = await getHistory();
   return history.find((h) => h.id === id) ?? null;
+}
+
+export async function updateAnalysis(
+  id: string,
+  patch: Partial<Pick<AnalysisResult, 'favorite' | 'note' | 'imageUri'>>
+): Promise<AnalysisResult | null> {
+  const history = await getHistory();
+  const idx = history.findIndex((h) => h.id === id);
+  if (idx < 0) return null;
+  history[idx] = { ...history[idx], ...patch, updatedAt: new Date().toISOString() };
+  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  return history[idx];
 }
 
 export async function deleteAnalysis(id: string): Promise<void> {

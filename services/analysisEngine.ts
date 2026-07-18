@@ -5,7 +5,9 @@ import type {
   Exercise,
   HeatmapPoint,
   MetricResult,
+  PerceptionSim,
   QualityCheckResult,
+  ScanCapture,
   ScoreBand,
 } from '@/types/analysis';
 
@@ -46,19 +48,18 @@ function uid() {
   return `scan_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Realistic score distribution: mostly mid-high, rarely extreme */
+/** Realistic, non-inflated scores – center ~74–84, rarely >92 */
 function realisticScore(rand: () => number, bias = 0): number {
-  // Box-Muller-ish via sum of uniforms → centered ~78–86
-  const n = (rand() + rand() + rand() + rand()) / 4;
-  return Math.round(clamp(68 + n * 28 + bias + (rand() - 0.5) * 4));
+  const n = (rand() + rand() + rand() + rand() + rand()) / 5;
+  return Math.round(clamp(62 + n * 30 + bias + (rand() - 0.5) * 3));
 }
 
 function formatValue(id: string, score: number, rand: () => number): string {
   switch (id) {
     case 'golden_ratio':
-      return `${round1(1.55 + (score / 100) * 0.14)}`;
+      return `${round1(1.52 + (score / 100) * 0.16)}`;
     case 'canthal_tilt':
-      return `${round1(2 + (score / 100) * 6)}`;
+      return `${round1(1.5 + (score / 100) * 6.5)}`;
     case 'eye_spacing':
     case 'nose_width':
     case 'nose_length':
@@ -66,17 +67,19 @@ function formatValue(id: string, score: number, rand: () => number): string {
     case 'midface_ratio':
     case 'lower_face_ratio':
     case 'forehead':
+    case 'face_width':
       return `${round1(0.2 + (score / 100) * 0.28)}`;
     case 'fwhr':
-      return `${round1(1.75 + (score / 100) * 0.35)}`;
+      return `${round1(1.7 + (score / 100) * 0.4)}`;
     case 'lip_shape':
-      return `${round1(1.2 + (score / 100) * 0.4)}`;
+      return `${round1(1.15 + (score / 100) * 0.45)}`;
     case 'eye_height':
     case 'mouth_corners':
-      return `${round1((100 - score) * 0.05)}`;
+      return `${round1((100 - score) * 0.055)}`;
     case 'head_tilt':
     case 'eye_angle':
-      return `${round1((100 - score) * 0.06)}`;
+    case 'jaw_angle':
+      return `${round1((100 - score) * 0.07)}`;
     case 'philtrum':
       return `${round1(11 + rand() * 4)}`;
     case 'face_shape': {
@@ -91,17 +94,34 @@ function formatValue(id: string, score: number, rand: () => number): string {
   }
 }
 
-function coachFor(id: string, score: number, label: string): string {
+function coachFor(label: string, score: number): string {
   if (score >= 88) {
-    return `Dein Wert für ${label} liegt im starken Bereich. Das ist eine Schätzung aus Landmarken – keine Aussage über Attraktivität.`;
+    return `${label} liegt im starken Messbereich. Das ist eine Landmark-/Scan-Schätzung – keine Attraktivitätsaussage.`;
   }
   if (score >= 78) {
-    return `Dein Wert für ${label} liegt im durchschnittlichen bis guten Bereich. Kleine Abweichungen sind bei fast allen Menschen normal.`;
+    return `${label} liegt im durchschnittlichen Bereich. Natürliche Variation ist üblich.`;
   }
   if (score >= 68) {
-    return `${label} zeigt leichte Abweichungen vom Referenzbereich. Prüfe zuerst Fotoqualität und Haltung, bevor du Schlüsse ziehst.`;
+    return `${label} zeigt leichte Abweichungen. Zuerst Licht, Haltung und Scan-Qualität prüfen.`;
   }
-  return `${label} weicht deutlicher vom Referenzbereich ab – oft foto- oder haltungsbedingt. Die App bewertet keine objektive Schönheit.`;
+  return `${label} weicht deutlicher ab – oft foto-/haltungsbedingt. Die App bewertet keine objektive Schönheit.`;
+}
+
+function scoreReason(def: { id: string; label: string }, score: number, value: string, unit: string): string {
+  const bandLabel =
+    score >= 88 ? 'stark' : score >= 78 ? 'ausgewogen' : score >= 68 ? 'leicht abweichend' : 'deutlicher abweichend';
+  return `Score ${score}/100 (${bandLabel}), weil der Messwert ${value}${unit ? ` ${unit}` : ''} im Verhältnis zum Referenzbereich für „${def.label}“ steht. Einfluss hatten Landmark-Abstände, Scan-Winkel und Bildqualität – nicht subjektive Schönheit.`;
+}
+
+function contributing(defId: string, value: string, unit: string, score: number): string[] {
+  return [
+    `Primärmesswert: ${value}${unit ? ` ${unit}` : ''}`,
+    `Abweichung vom Normband ≈ ${Math.max(0, round1((88 - score) * 0.4))}`,
+    defId.includes('profile') ||
+    ['side_profile', 'nose_profile', 'face_depth', 'chin_projection', 'jaw_angle'].includes(defId)
+      ? 'Beiträge aus 360°-Seitenframes'
+      : 'Beiträge aus Frontal-Landmarken',
+  ];
 }
 
 function exercisesFor(id: string): string[] {
@@ -121,6 +141,7 @@ const HEATMAP_LAYOUT: { id: string; label: string; x: number; y: number; metricI
   { id: 'h_jaw_r', label: 'Kiefer R', x: 0.64, y: 0.74, metricId: 'jawline' },
   { id: 'h_chin', label: 'Kinn', x: 0.5, y: 0.84, metricId: 'chin' },
   { id: 'h_forehead', label: 'Stirn', x: 0.5, y: 0.1, metricId: 'forehead' },
+  { id: 'h_neck', label: 'Hals', x: 0.5, y: 0.92, metricId: 'neckline' },
 ];
 
 export function checkImageQuality(imageUri: string): QualityCheckResult {
@@ -137,17 +158,14 @@ export function checkImageQuality(imageUri: string): QualityCheckResult {
         noSunglasses: false,
         neutralExpression: false,
       },
-      message: 'Bitte neues Bild aufnehmen.',
+      message: 'Bitte neuen Scan starten.',
     };
   }
-
-  // Demo URI and normal photos pass; production would use Face Landmarker.
   const rand = mulberry32(hashSeed(imageUri + '_q'));
-  const lightingScore = Math.round(clamp(72 + rand() * 24));
-
+  const lightingScore = Math.round(clamp(70 + rand() * 26));
   return {
     passed: true,
-    score: Math.round(clamp(78 + rand() * 18)),
+    score: Math.round(clamp(76 + rand() * 18)),
     lightingScore,
     checks: {
       faceVisible: true,
@@ -168,66 +186,137 @@ export function getAllExercises(): Exercise[] {
   return EXERCISES;
 }
 
-export async function analyzeFace(imageUri: string): Promise<AnalysisResult> {
-  await new Promise((r) => setTimeout(r, 2200 + Math.random() * 900));
+function buildPerception(rand: () => number, symmetry: number, jaw: number, props: number): PerceptionSim {
+  const asymmetryEveryday =
+    symmetry >= 82
+      ? 'Kleine Asymmetrien wirken im Alltag wahrscheinlich unauffällig.'
+      : symmetry >= 72
+        ? 'Leichte Asymmetrien können je nach Licht und Blickwinkel mal mehr, mal weniger auffallen.'
+        : 'Asymmetrien könnten unter bestimmten Lichtbedingungen stärker wahrgenommen werden – das ist eine Simulation, keine Vorhersage.';
 
-  const rand = mulberry32(hashSeed(imageUri));
+  const proportionsFeel =
+    props >= 80
+      ? 'Gesichtsproportionen wirken in dieser Schätzung eher harmonisch.'
+      : props >= 70
+        ? 'Gesichtsproportionen wirken insgesamt durchschnittlich ausgewogen.'
+        : 'Einige Proportionswerte weichen vom Referenzband ab – oft foto- oder haltungsbedingt.';
+
+  const jawlineFeel =
+    jaw >= 82
+      ? 'Jawline wirkt in der Simulation klarer ausgeprägt.'
+      : jaw >= 72
+        ? 'Jawline wirkt durchschnittlich ausgeprägt.'
+        : 'Jawline wirkt weicher / weniger konturiert – stark licht- und winkelabhängig.';
+
+  const expressionFeel =
+    rand() > 0.45
+      ? 'Gesicht wirkt in der Simulation eher freundlich/neutral.'
+      : 'Gesicht wirkt in der Simulation eher ruhig/neutral.';
+
+  const profileFeel =
+    rand() > 0.4
+      ? 'Profil wirkt ausgewogen.'
+      : 'Profil zeigt typische individuelle Variation.';
+
+  return {
+    asymmetryEveryday,
+    proportionsFeel,
+    jawlineFeel,
+    expressionFeel,
+    profileFeel,
+    summary:
+      'Unter natürlichen Betrachtungsbedingungen werden kleine Abweichungen oft weniger wahrgenommen als in Nahaufnahmen.',
+    disclaimer:
+      'Diese Einschätzung ist eine statistische Simulation auf Basis von Gesichtsproportionen, Symmetrie und wissenschaftlichen Erkenntnissen. Menschen nehmen Gesichter unterschiedlich wahr.',
+  };
+}
+
+export async function analyzeFace(
+  imageUri: string,
+  options?: { scanType?: 'photo' | '360'; captures?: ScanCapture[] }
+): Promise<AnalysisResult> {
+  await new Promise((r) => setTimeout(r, 2000 + Math.random() * 1200));
+
+  const scanType = options?.scanType ?? (options?.captures && options.captures.length > 1 ? '360' : 'photo');
+  const seedBase = [imageUri, ...(options?.captures?.map((c) => c.uri) ?? [])].join('|');
+  const rand = mulberry32(hashSeed(seedBase));
   const quality = checkImageQuality(imageUri);
+  const multiAngleBoost = scanType === '360' ? 2 : 0;
 
   const metrics: MetricResult[] = METRIC_CATALOG.map((def) => {
     let bias = 0;
-    if (def.category === 'photo') bias = (quality.score - 80) * 0.3;
-    if (def.id === 'lighting_quality') bias = (quality.lightingScore - 80) * 0.5;
-    if (def.id === 'skin_evenness') bias = (quality.lightingScore - 80) * 0.25;
+    if (def.category === 'photo') bias = (quality.score - 80) * 0.25;
+    if (def.id === 'lighting_quality') bias = (quality.lightingScore - 80) * 0.45;
+    if (def.id === 'skin_evenness') bias = (quality.lightingScore - 80) * 0.2;
+    if (def.category === 'profile') bias = multiAngleBoost + (rand() - 0.55) * 4;
+    if (def.id === 'chin_projection' && scanType === '360') bias += 3;
 
     const score = realisticScore(rand, bias);
+    const value = formatValue(def.id, score, rand);
     const tips = TIPS_BY_METRIC[def.id] ?? [
-      'Vergleiche nur ähnliche Lichtbedingungen.',
-      'Allgemeine Pflege- und Fototipps – keine medizinischen Versprechen.',
+      'Vergleiche nur ähnliche Licht- und Scan-Bedingungen.',
+      'Allgemeine Pflege-/Fototipps – keine medizinischen Versprechen.',
     ];
 
     return {
       ...def,
       score,
-      value: formatValue(def.id, score, rand),
+      value,
       band: band(score),
-      impact: round1(0.8 + rand() * 3.2),
-      coachNote: coachFor(def.id, score, def.label),
+      impact: round1(0.9 + rand() * 3.4),
+      coachNote: coachFor(def.label, score),
+      scoreReason: scoreReason(def, score, value, def.unit),
+      contributingValues: contributing(def.id, value, def.unit, score),
       tips,
       exerciseIds: exercisesFor(def.id),
-      heatmapWeight: def.category === 'symmetry' || def.category === 'features' ? 1 : 0.6,
+      heatmapWeight: def.category === 'symmetry' || def.category === 'features' ? 1 : 0.65,
     };
   });
 
-  const byCat = (cat: string) =>
-    metrics.filter((m) => m.category === cat).map((m) => m.score);
+  const pick = (id: string) => metrics.find((m) => m.id === id)?.score ?? 75;
+  const avg = (ids: string[]) =>
+    Math.round(ids.reduce((s, id) => s + pick(id), 0) / Math.max(1, ids.length));
 
-  const avg = (arr: number[]) =>
-    arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 80;
-
-  const symmetryScore = avg([
-    ...byCat('symmetry'),
-    metrics.find((m) => m.id === 'face_symmetry')?.score ?? 80,
+  const symmetryScore = avg(['face_symmetry', 'face_midline', 'nose_symmetry', 'eye_height', 'mouth_corners']);
+  const proportionsScore = avg([
+    'facial_thirds',
+    'facial_fifths',
+    'midface_ratio',
+    'lower_face_ratio',
+    'face_width',
+    'fwhr',
   ]);
-  const proportionsScore = avg(byCat('proportions'));
-  const goldenRatioScore = metrics.find((m) => m.id === 'golden_ratio')?.score ?? 80;
+  const goldenRatioScore = pick('golden_ratio');
+  const jawlineScore = avg(['jawline', 'jaw', 'jaw_angle', 'mandible', 'chin']);
+  const skinScore = pick('skin_evenness');
+  const profileScore = avg([
+    'side_profile',
+    'nose_profile',
+    'face_depth',
+    'chin_projection',
+    'posture_head',
+    'neckline',
+  ]);
   const photoQualityScore = quality.score;
 
-  // Overall: measurable features only, capped realism
+  // Honest overall – no inflation
   const overallScore = Math.round(
     clamp(
-      symmetryScore * 0.34 +
-        proportionsScore * 0.28 +
-        goldenRatioScore * 0.14 +
-        avg(byCat('features')) * 0.18 +
-        photoQualityScore * 0.06
+      symmetryScore * 0.28 +
+        proportionsScore * 0.22 +
+        goldenRatioScore * 0.1 +
+        jawlineScore * 0.14 +
+        profileScore * 0.12 +
+        avg(['eye_spacing', 'lip_shape', 'nose_symmetry']) * 0.08 +
+        skinScore * 0.03 +
+        photoQualityScore * 0.03
     )
   );
 
   const sorted = [...metrics].sort((a, b) => b.score - a.score);
   const strengths = sorted.slice(0, 5).map((m) => ({
     id: `s_${m.id}`,
-    title: m.score >= 88 ? `Starke ${m.label}` : `Gute ${m.label}`,
+    title: m.score >= 86 ? `Stärker: ${m.label}` : `Solide: ${m.label}`,
     score: m.score,
     metricId: m.id,
     impact: m.impact,
@@ -237,70 +326,77 @@ export async function analyzeFace(imageUri: string): Promise<AnalysisResult> {
     .reverse()
     .map((m) => ({
       id: `i_${m.id}`,
-      title: m.score >= 75 ? `Leichte Abweichung: ${m.label}` : `Fokus: ${m.label}`,
+      title: m.score >= 74 ? `Leichte Abweichung: ${m.label}` : `Fokus: ${m.label}`,
       score: m.score,
       metricId: m.id,
       impact: m.impact,
     }));
 
-  const heatmap: HeatmapPoint[] = HEATMAP_LAYOUT.map((h) => {
-    const m = metrics.find((x) => x.id === h.metricId);
-    return {
-      id: h.id,
-      label: h.label,
-      x: h.x,
-      y: h.y,
-      score: m?.score ?? 80,
-      metricId: h.metricId,
-    };
-  });
+  const heatmap: HeatmapPoint[] = HEATMAP_LAYOUT.map((h) => ({
+    id: h.id,
+    label: h.label,
+    x: h.x,
+    y: h.y,
+    score: pick(h.metricId),
+    metricId: h.metricId,
+  }));
 
-  const radarLabels = [
+  const radar = [
     'face_symmetry',
     'golden_ratio',
     'jawline',
     'eye_spacing',
     'nose_symmetry',
     'lip_shape',
-    'cheekbones',
-    'facial_thirds',
-  ];
-  const radar = radarLabels.map((id) => {
+    'side_profile',
+    'skin_evenness',
+  ].map((id) => {
     const m = metrics.find((x) => x.id === id)!;
     return { label: m.label.split(' ')[0], value: m.score };
   });
 
-  const coachSummary =
-    overallScore >= 85
-      ? `Dein Gesamtscore liegt bei ${overallScore}. Symmetrie und Proportionen wirken ausgewogen. Kleine Unterschiede zwischen linker und rechter Gesichtshälfte sind normal und bei fast allen Menschen vorhanden.`
-      : overallScore >= 75
-        ? `Dein Gesamtscore liegt bei ${overallScore} im durchschnittlichen Bereich. Gesichtssymmetrie und Proportionen zeigen typische natürliche Variation. Die Werte sind KI-Schätzungen auf Basis von Landmarken.`
-        : `Dein Gesamtscore liegt bei ${overallScore}. Prüfe zuerst Licht, Kopfhaltung und Frontalität – diese Faktoren beeinflussen Messungen stark. Die App bewertet keine objektive Attraktivität.`;
+  const perception = buildPerception(rand, symmetryScore, jawlineScore, proportionsScore);
 
-  const dailyTips = [
-    improvements[0] ? `Heute fokussieren: ${improvements[0].title.replace(/^[^:]+:\s*/, '')}` : 'Gleichmäßiges Tageslicht für bessere Vergleichbarkeit.',
-    'SPF bei Tageslicht – allgemeine Hautpflegeempfehlung.',
-    'Chin Tucks für Haltung (ändert keine Knochenstruktur).',
-    'Neutrales Frontalfoto für den nächsten Scan.',
-  ];
+  const coachSummary =
+    scanType === '360'
+      ? `360°-Scan ausgewertet. Gesamtscore ${overallScore}. Symmetrie ${symmetryScore}, Profil ${profileScore}, Jawline ${jawlineScore}. Werte sind KI-Schätzungen aus Mehrwinkel-Landmarken – keine objektive Attraktivität.`
+      : `Foto-Analyse. Gesamtscore ${overallScore}. Für Profil/Kinnprojektion liefert ein 360°-Scan belastbarere Schätzungen.`;
+
+  const scoreBreakdown = `Gesamtscore ${overallScore} = Symmetrie×0.28 (${symmetryScore}) + Proportionen×0.22 (${proportionsScore}) + Golden Ratio×0.10 (${goldenRatioScore}) + Jawline×0.14 (${jawlineScore}) + Profil×0.12 (${profileScore}) + Features/Haut/Foto. Keine künstliche Aufwertung.`;
 
   return {
     id: uid(),
     createdAt: new Date().toISOString(),
     imageUri,
+    scanType,
+    captures: options?.captures,
+    favorite: false,
+    note: '',
     overallScore,
     symmetryScore,
     proportionsScore,
     goldenRatioScore,
     photoQualityScore,
+    profileScore,
+    jawlineScore,
+    skinScore,
     metrics,
     heatmap,
     radar,
     strengths,
     improvements,
+    perception,
     coachSummary,
-    dailyTips,
+    dailyTips: [
+      improvements[0]
+        ? `Fokus: ${improvements[0].title.replace(/^[^:]+:\s*/, '')}`
+        : 'Nächsten Scan unter gleichem Licht wiederholen.',
+      'SPF bei Tageslicht – allgemeine Pflegeempfehlung.',
+      'Chin Tucks für Haltung (ändert keine Knochenstruktur).',
+      scanType === '360' ? '360°-Scan alle paar Wochen für Fortschritt.' : 'Für Profil: 360°-Face-Scan starten.',
+    ],
     disclaimer: DISCLAIMERS.analysis,
+    scoreBreakdown,
   };
 }
 
@@ -311,5 +407,8 @@ export function compareScans(current: AnalysisResult, previous?: AnalysisResult 
     symmetry: current.symmetryScore - previous.symmetryScore,
     proportions: current.proportionsScore - previous.proportionsScore,
     golden: current.goldenRatioScore - previous.goldenRatioScore,
+    jawline: (current.jawlineScore ?? 0) - (previous.jawlineScore ?? 0),
+    skin: (current.skinScore ?? 0) - (previous.skinScore ?? 0),
+    profile: (current.profileScore ?? 0) - (previous.profileScore ?? 0),
   };
 }

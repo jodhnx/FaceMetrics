@@ -61,12 +61,12 @@ export default function HomeScreen() {
               Frontales Foto, gerader Blick, neutrales Gesicht, gutes Licht.
             </Text>
             <PrimaryButton
-              title="Quick Scan"
-              onPress={() => router.push('/(tabs)/scan')}
+              title="360° Face Scan"
+              onPress={() => router.push('/live-scan' as any)}
               style={{ marginTop: Spacing.xl }}
             />
             <PrimaryButton
-              title="Demo-Analyse"
+              title="Demo-Analyse (ohne Kamera)"
               variant="secondary"
               onPress={() =>
                 router.push({
@@ -152,8 +152,8 @@ export default function HomeScreen() {
         </View>
 
         <PrimaryButton
-          title="Quick Scan"
-          onPress={() => router.push('/(tabs)/scan')}
+          title="360° Quick Scan"
+          onPress={() => router.push('/live-scan' as any)}
           style={{ marginTop: Spacing.lg }}
         />
 

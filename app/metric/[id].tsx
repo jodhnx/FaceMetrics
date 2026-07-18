@@ -46,6 +46,23 @@ export default function MetricDetailScreen() {
           </View>
         ) : null}
 
+        {metric?.scoreReason ? (
+          <GlassCard style={{ marginTop: Spacing.md }}>
+            <Text style={[Typography.title3, { color: colors.text }]}>Warum dieser Score?</Text>
+            <Text style={[Typography.body, { color: colors.textSecondary, marginTop: Spacing.sm }]}>
+              {metric.scoreReason}
+            </Text>
+            {metric.contributingValues?.map((v) => (
+              <Text
+                key={v}
+                style={[Typography.footnote, { color: colors.textTertiary, marginTop: 6 }]}
+              >
+                • {v}
+              </Text>
+            ))}
+          </GlassCard>
+        ) : null}
+
         <GlassCard style={{ marginTop: Spacing.md }}>
           <Text style={[Typography.title3, { color: colors.text }]}>Beschreibung</Text>
           <Text style={[Typography.body, { color: colors.textSecondary, marginTop: Spacing.sm }]}>

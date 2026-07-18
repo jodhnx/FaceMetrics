@@ -58,7 +58,7 @@ export default function ResultsScreen() {
     <AppBackground>
       <ScreenHeader title="Ergebnisse" subtitle="AI-Schätzung" showBack />
       <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: 60 }}>
-        {data.imageUri ? (
+        {data.imageUri && !data.imageUri.startsWith('demo://') ? (
           <Image source={{ uri: data.imageUri }} style={[styles.hero, { borderColor: colors.border }]} />
         ) : null}
 

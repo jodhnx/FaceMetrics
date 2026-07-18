@@ -196,7 +196,7 @@ function buildStrengthsWeaknesses(metrics: MetricValue[], factors: Attractivenes
 
   const strengths: StrengthWeakness[] = top.map((m, i) => ({
     id: `s_${m.id}`,
-    title: m.score >= 90 ? `Sehr ${m.label.toLowerCase()}` : `Gute ${m.label}`,
+    title: m.score >= 90 ? `Sehr gute ${m.label}` : `Gute ${m.label}`,
     type: 'strength',
     score: m.score,
     explanation: m.explanation,

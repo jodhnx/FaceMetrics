@@ -94,9 +94,6 @@ const styles = StyleSheet.create({
     marginTop: -9,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOpacity: 0.45,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 0 },
   },
   tooltip: {
     marginTop: -22,

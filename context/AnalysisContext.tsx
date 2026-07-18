@@ -33,22 +33,19 @@ export function AnalysisProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       const quality = checkImageQuality(imageUri);
       if (!quality.passed) {
-        setError(quality.message ?? 'Bitte lade ein besseres Bild hoch.');
+        setError(quality.message ?? 'Bitte neues Bild aufnehmen.');
         return null;
       }
-
       setIsAnalyzing(true);
       try {
         const result = await analyzeFace(imageUri);
-        const stored = settings.autoDeletePhotos
-          ? { ...result, imageUri: '' }
-          : result;
+        const stored = settings.autoDeletePhotos ? { ...result, imageUri: '' } : result;
         await saveAnalysis(stored, settings);
         setCurrent(stored);
         await refreshHistory();
         return stored;
       } catch {
-        setError('Analyse fehlgeschlagen. Bitte versuche es erneut.');
+        setError('Analyse fehlgeschlagen. Bitte erneut versuchen.');
         return null;
       } finally {
         setIsAnalyzing(false);
@@ -71,9 +68,7 @@ export function AnalysisProvider({ children }: { children: React.ReactNode }) {
     [current, history, isAnalyzing, error, refreshHistory, runAnalysis]
   );
 
-  return (
-    <AnalysisContext.Provider value={value}>{children}</AnalysisContext.Provider>
-  );
+  return <AnalysisContext.Provider value={value}>{children}</AnalysisContext.Provider>;
 }
 
 export function useAnalysis() {

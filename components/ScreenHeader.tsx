@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
-import { Spacing, Typography } from '@/constants/theme';
+import { Layout, Spacing, Typography } from '@/constants/theme';
 
 interface Props {
   title: string;
@@ -22,11 +22,15 @@ export function ScreenHeader({ title, subtitle, showBack, right }: Props) {
     <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
       <View style={styles.row}>
         {showBack ? (
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
-            <Ionicons name="chevron-back" size={26} color={colors.accent} />
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={16}
+            style={[styles.backBtn, { backgroundColor: colors.surfaceSolid, borderColor: colors.border }]}
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
         ) : (
-          <View style={{ width: 26 }} />
+          <View style={{ width: 44 }} />
         )}
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={[Typography.title2, { color: colors.text }]}>{title}</Text>
@@ -34,7 +38,7 @@ export function ScreenHeader({ title, subtitle, showBack, right }: Props) {
             <Text style={[Typography.caption, { color: colors.textSecondary }]}>{subtitle}</Text>
           ) : null}
         </View>
-        <View style={{ width: 26, alignItems: 'flex-end' }}>{right}</View>
+        <View style={{ width: 44, alignItems: 'flex-end' }}>{right}</View>
       </View>
     </View>
   );
@@ -42,14 +46,16 @@ export function ScreenHeader({ title, subtitle, showBack, right }: Props) {
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Layout.screenPadding,
     paddingBottom: Spacing.sm,
   },
-  row: {
-    flexDirection: 'row',
+  row: { flexDirection: 'row', alignItems: 'center' },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
-  },
-  back: {
-    marginLeft: -4,
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
   },
 });

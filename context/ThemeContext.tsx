@@ -4,7 +4,7 @@ import { Colors } from '@/constants/theme';
 import { getSettings, saveSettings } from '@/services/storage';
 import type { AppSettings } from '@/types/analysis';
 
-type ThemeColors = typeof Colors.light;
+type ThemeColors = typeof Colors.dark;
 
 interface ThemeContextValue {
   isDark: boolean;
@@ -18,23 +18,23 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
   const [settings, setSettings] = useState<AppSettings>({
-    theme: 'system',
+    theme: 'dark',
     autoDeletePhotos: false,
     saveHistory: true,
-    language: 'de',
   });
 
   useEffect(() => {
     getSettings().then(setSettings);
   }, []);
 
-  const isDark =
-    settings.theme === 'dark' || (settings.theme === 'system' && system === 'dark');
+  // Default dark: only light when explicitly light
+  const resolvedDark =
+    settings.theme === 'light' ? false : settings.theme === 'system' ? system !== 'light' : true;
 
   const value = useMemo(
     () => ({
-      isDark,
-      colors: isDark ? Colors.dark : Colors.light,
+      isDark: resolvedDark,
+      colors: resolvedDark ? Colors.dark : Colors.light,
       settings,
       updateSettings: async (patch: Partial<AppSettings>) => {
         const next = { ...settings, ...patch };
@@ -42,7 +42,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         await saveSettings(next);
       },
     }),
-    [isDark, settings]
+    [resolvedDark, settings]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -1,15 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { AnalysisResult, AppSettings } from '@/types/analysis';
+import type { AnalysisResult, AppSettings, WeightEntry } from '@/types/analysis';
 
-const HISTORY_KEY = '@facemetrics/history';
-const SETTINGS_KEY = '@facemetrics/settings';
-const ONBOARDING_KEY = '@facemetrics/onboarding_done';
+const HISTORY_KEY = '@facemetrics/history_v2';
+const SETTINGS_KEY = '@facemetrics/settings_v2';
+const ONBOARDING_KEY = '@facemetrics/onboarding_v2';
+const WEIGHT_KEY = '@facemetrics/weight';
 
 const defaultSettings: AppSettings = {
-  theme: 'system',
+  theme: 'dark',
   autoDeletePhotos: false,
   saveHistory: true,
-  language: 'de',
 };
 
 export async function getSettings(): Promise<AppSettings> {
@@ -39,14 +39,12 @@ export async function getHistory(): Promise<AnalysisResult[]> {
 export async function saveAnalysis(result: AnalysisResult, settings?: AppSettings): Promise<void> {
   const cfg = settings ?? (await getSettings());
   if (!cfg.saveHistory) return;
-
   const history = await getHistory();
   const toStore: AnalysisResult = {
     ...result,
     imageUri: cfg.autoDeletePhotos ? '' : result.imageUri,
   };
-  const next = [toStore, ...history].slice(0, 50);
-  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify([toStore, ...history].slice(0, 60)));
 }
 
 export async function getAnalysisById(id: string): Promise<AnalysisResult | null> {
@@ -56,10 +54,7 @@ export async function getAnalysisById(id: string): Promise<AnalysisResult | null
 
 export async function deleteAnalysis(id: string): Promise<void> {
   const history = await getHistory();
-  await AsyncStorage.setItem(
-    HISTORY_KEY,
-    JSON.stringify(history.filter((h) => h.id !== id))
-  );
+  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(history.filter((h) => h.id !== id)));
 }
 
 export async function clearHistory(): Promise<void> {
@@ -72,4 +67,20 @@ export async function isOnboardingDone(): Promise<boolean> {
 
 export async function setOnboardingDone(): Promise<void> {
   await AsyncStorage.setItem(ONBOARDING_KEY, '1');
+}
+
+export async function getWeightLog(): Promise<WeightEntry[]> {
+  try {
+    const raw = await AsyncStorage.getItem(WEIGHT_KEY);
+    return raw ? (JSON.parse(raw) as WeightEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addWeight(kg: number): Promise<WeightEntry[]> {
+  const log = await getWeightLog();
+  const next = [{ date: new Date().toISOString(), kg }, ...log].slice(0, 100);
+  await AsyncStorage.setItem(WEIGHT_KEY, JSON.stringify(next));
+  return next;
 }

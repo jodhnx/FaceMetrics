@@ -15,25 +15,25 @@ import { AppBackground } from '@/components/AppBackground';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useTheme } from '@/context/ThemeContext';
 import { setOnboardingDone } from '@/services/storage';
-import { DISCLAIMERS, Spacing, Typography } from '@/constants/theme';
+import { DISCLAIMERS, Layout, Spacing, Typography } from '@/constants/theme';
 
-const { width } = Dimensions.get('window');
+const width = Math.min(Dimensions.get('window').width, Layout.maxContentWidth);
 
 const SLIDES = [
   {
-    title: 'FaceMetrics AI',
-    body: 'Hochwertige Gesichtsanalyse zu Symmetrie, Proportionen und Harmonie – transparent und schätzungsbasiert.',
-    emoji: '◇',
+    kicker: 'FACEMETRICS AI',
+    title: 'Messbar.\nEhrlich.\nPrivat.',
+    body: 'Landmarken, Symmetrie und Proportionen – als KI-Schätzung, nie als objektive Schönheit.',
   },
   {
-    title: 'Präzise Messungen',
-    body: 'Dutzende Merkmale von Augen bis Kiefer – visualisiert mit Heatmaps, Radar und Detailseiten.',
-    emoji: '◎',
+    kicker: 'ANALYSE',
+    title: 'Dutzende\nMesswerte.',
+    body: 'Von Canthal Tilt bis Jawline – mit Score, Normbereich, Coach und klaren Hinweisen.',
   },
   {
-    title: 'Transparent & privat',
-    body: 'On-Device-orientierte Verarbeitung, optionale Foto-Löschung und klare Hinweise zu allen Scores.',
-    emoji: '⬡',
+    kicker: 'FORTSCHRITT',
+    title: 'Vergleichen.\nVerstehen.\nVerbessern.',
+    body: 'Verlauf, Heatmaps und evidenzbasierte Tipps zu Haltung, Pflege und Fotos.',
   },
 ];
 
@@ -52,23 +52,24 @@ export default function Onboarding() {
   const next = () => {
     if (index < SLIDES.length - 1) {
       listRef.current?.scrollToIndex({ index: index + 1, animated: true });
+      setIndex(index + 1);
     } else {
       finish();
     }
   };
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const i = Math.round(e.nativeEvent.contentOffset.x / width);
-    setIndex(i);
+    setIndex(Math.round(e.nativeEvent.contentOffset.x / width));
   };
 
   return (
     <AppBackground>
-      <View style={[styles.container, { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.lg }]}>
-        <Animated.Text entering={FadeInDown.duration(600)} style={[Typography.caption, { color: colors.accent, textAlign: 'center', letterSpacing: 2 }]}>
-          PREMIUM FACIAL ANALYSIS
-        </Animated.Text>
-
+      <View
+        style={[
+          styles.container,
+          { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.lg },
+        ]}
+      >
         <FlatList
           ref={listRef}
           data={SLIDES}
@@ -78,10 +79,19 @@ export default function Onboarding() {
           onScroll={onScroll}
           keyExtractor={(_, i) => String(i)}
           renderItem={({ item }) => (
-            <View style={{ width, paddingHorizontal: Spacing.lg, paddingTop: Spacing.xxl }}>
-              <Text style={[styles.glyph, { color: colors.accent }]}>{item.emoji}</Text>
-              <Text style={[Typography.hero, { color: colors.text, marginTop: Spacing.lg }]}>{item.title}</Text>
-              <Text style={[Typography.body, { color: colors.textSecondary, marginTop: Spacing.md }]}>{item.body}</Text>
+            <View style={{ width, paddingHorizontal: Layout.screenPadding, paddingTop: Spacing.xxl }}>
+              <Animated.Text
+                entering={FadeInDown.duration(500)}
+                style={[Typography.overline, { color: colors.accent }]}
+              >
+                {item.kicker}
+              </Animated.Text>
+              <Text style={[Typography.hero, { color: colors.text, marginTop: Spacing.md }]}>
+                {item.title}
+              </Text>
+              <Text style={[Typography.body, { color: colors.textSecondary, marginTop: Spacing.lg }]}>
+                {item.body}
+              </Text>
             </View>
           )}
         />
@@ -93,20 +103,33 @@ export default function Onboarding() {
               style={[
                 styles.dot,
                 {
-                  backgroundColor: i === index ? colors.accent : colors.border,
-                  width: i === index ? 22 : 8,
+                  backgroundColor: i === index ? colors.accent : colors.borderStrong,
+                  width: i === index ? 28 : 8,
                 },
               ]}
             />
           ))}
         </View>
 
-        <Text style={[Typography.footnote, { color: colors.textTertiary, textAlign: 'center', marginHorizontal: Spacing.lg, marginBottom: Spacing.md }]}>
+        <Text
+          style={[
+            Typography.footnote,
+            {
+              color: colors.textTertiary,
+              textAlign: 'center',
+              marginHorizontal: Layout.screenPadding,
+              marginBottom: Spacing.md,
+            },
+          ]}
+        >
           {DISCLAIMERS.general}
         </Text>
 
-        <View style={{ paddingHorizontal: Spacing.lg }}>
-          <PrimaryButton title={index === SLIDES.length - 1 ? 'Loslegen' : 'Weiter'} onPress={next} />
+        <View style={{ paddingHorizontal: Layout.screenPadding }}>
+          <PrimaryButton
+            title={index === SLIDES.length - 1 ? 'App starten' : 'Weiter'}
+            onPress={next}
+          />
         </View>
       </View>
     </AppBackground>
@@ -115,15 +138,11 @@ export default function Onboarding() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  glyph: { fontSize: 56, fontWeight: '200' },
   dots: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
     marginBottom: Spacing.lg,
   },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-  },
+  dot: { height: 8, borderRadius: 4 },
 });

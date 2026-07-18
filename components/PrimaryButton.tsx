@@ -8,12 +8,12 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/context/ThemeContext';
-import { Radii, Spacing, Typography } from '@/constants/theme';
+import { Layout, Radii, Spacing, Typography } from '@/constants/theme';
 
 interface Props {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
@@ -33,24 +33,33 @@ export function PrimaryButton({
     variant === 'primary'
       ? colors.accent
       : variant === 'secondary'
-        ? colors.accentSoft
-        : 'transparent';
-  const fg = variant === 'primary' ? '#FFFFFF' : colors.accent;
+        ? colors.accentDim
+        : variant === 'danger'
+          ? colors.dangerDim
+          : 'transparent';
+
+  const fg =
+    variant === 'primary'
+      ? colors.accentText
+      : variant === 'danger'
+        ? colors.danger
+        : colors.accent;
 
   return (
     <Pressable
       disabled={disabled || loading}
       onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onPress();
       }}
       style={({ pressed }) => [
         styles.btn,
         {
           backgroundColor: bg,
-          opacity: pressed || disabled ? 0.65 : 1,
-          borderColor: variant === 'ghost' ? colors.border : 'transparent',
-          borderWidth: variant === 'ghost' ? StyleSheet.hairlineWidth : 0,
+          opacity: pressed || disabled ? 0.7 : 1,
+          borderColor: variant === 'ghost' ? colors.borderStrong : 'transparent',
+          borderWidth: variant === 'ghost' ? 1 : 0,
+          minHeight: Layout.buttonHeight,
         },
         style,
       ]}
@@ -58,7 +67,9 @@ export function PrimaryButton({
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
-        <Text style={[Typography.callout, { color: fg, fontWeight: '600' }]}>{title}</Text>
+        <Text style={[Typography.callout, { color: fg, fontWeight: '700', fontSize: 16 }]}>
+          {title}
+        </Text>
       )}
     </Pressable>
   );
@@ -66,7 +77,6 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   btn: {
-    height: 52,
     borderRadius: Radii.full,
     alignItems: 'center',
     justifyContent: 'center',

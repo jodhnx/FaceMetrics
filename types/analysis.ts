@@ -1,77 +1,62 @@
-export type ScoreLevel = 'excellent' | 'good' | 'average' | 'mild' | 'notable';
+export type EvidenceLevel = 'well_supported' | 'general_advice' | 'limited_evidence';
+export type ScoreBand = 'strong' | 'balanced' | 'mild' | 'notable';
 
-export interface MetricValue {
+export interface MetricDefinition {
   id: string;
   label: string;
+  category: 'symmetry' | 'proportions' | 'features' | 'photo' | 'skin';
+  description: string;
+  howMeasured: string;
+  whyImportant: string;
+  normRange: string;
+  unit: string;
+}
+
+export interface MetricResult extends MetricDefinition {
   score: number;
   value: string;
-  unit?: string;
-  explanation: string;
-  normRange: string;
-  whyImportant: string;
+  band: ScoreBand;
   impact: number;
-  level: ScoreLevel;
+  coachNote: string;
+  tips: string[];
+  exerciseIds: string[];
+  heatmapWeight: number;
 }
 
-export interface StrengthWeakness {
+export interface Exercise {
   id: string;
   title: string;
-  type: 'strength' | 'improvement';
-  score: number;
-  explanation: string;
-  impact: number;
-  category: string;
-}
-
-export interface ProportionMetric {
-  id: string;
-  label: string;
-  score: number;
-  value: number;
-  ideal: number;
-  unit: string;
-  explanation: string;
-}
-
-export interface AttractivenessFactor {
-  id: string;
-  label: string;
-  score: number;
-  explanation: string;
-}
-
-export interface CelebrityMatch {
-  id: string;
-  name: string;
-  similarity: number;
-  note: string;
-}
-
-export interface PerceptionSim {
-  everydaySymmetry: 'höher' | 'durchschnittlich' | 'niedriger';
-  naturalness: 'hoch' | 'mittel' | 'niedrig';
-  asymmetryNoticeability: 'gering' | 'mittel' | 'hoch';
-  everydayDetectionChance: 'niedrig' | 'mittel' | 'hoch';
-  summary: string;
+  category: 'posture' | 'face' | 'jaw' | 'breathing';
+  duration: string;
+  frequency: string;
+  evidence: EvidenceLevel;
+  evidenceNote: string;
+  steps: string[];
+  relatedMetrics: string[];
 }
 
 export interface HeatmapPoint {
+  id: string;
+  label: string;
   x: number;
   y: number;
-  symmetry: number;
-  label: string;
+  score: number;
+  metricId: string;
 }
 
 export interface QualityCheckResult {
   passed: boolean;
+  score: number;
   checks: {
     faceVisible: boolean;
     headStraight: boolean;
+    frontal: boolean;
     goodLighting: boolean;
     noSunglasses: boolean;
     neutralExpression: boolean;
   };
   message?: string;
+  lightingScore: number;
 }
 
 export interface AnalysisResult {
@@ -80,17 +65,16 @@ export interface AnalysisResult {
   imageUri: string;
   overallScore: number;
   symmetryScore: number;
-  goldenRatioScore: number;
   proportionsScore: number;
-  symmetryMetrics: MetricValue[];
-  proportionMetrics: ProportionMetric[];
-  strengths: StrengthWeakness[];
-  improvements: StrengthWeakness[];
-  factors: AttractivenessFactor[];
-  celebrityMatches: CelebrityMatch[];
-  perception: PerceptionSim;
+  goldenRatioScore: number;
+  photoQualityScore: number;
+  metrics: MetricResult[];
   heatmap: HeatmapPoint[];
   radar: { label: string; value: number }[];
+  strengths: { id: string; title: string; score: number; metricId: string; impact: number }[];
+  improvements: { id: string; title: string; score: number; metricId: string; impact: number }[];
+  coachSummary: string;
+  dailyTips: string[];
   disclaimer: string;
 }
 
@@ -98,5 +82,10 @@ export interface AppSettings {
   theme: 'system' | 'light' | 'dark';
   autoDeletePhotos: boolean;
   saveHistory: boolean;
-  language: 'de';
+  weightKg?: number;
+}
+
+export interface WeightEntry {
+  date: string;
+  kg: number;
 }

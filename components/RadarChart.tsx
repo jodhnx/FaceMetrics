@@ -8,11 +8,11 @@ interface Props {
   size?: number;
 }
 
-export function RadarChart({ data, size = 260 }: Props) {
+export function RadarChart({ data, size = 280 }: Props) {
   const { colors } = useTheme();
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size * 0.34;
+  const radius = size * 0.32;
   const n = data.length;
   if (n < 3) return null;
 
@@ -24,12 +24,11 @@ export function RadarChart({ data, size = 260 }: Props) {
 
   const labelAt = (i: number) => {
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n;
-    const r = radius + 22;
+    const r = radius + 26;
     return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
   };
 
   const poly = data.map((d, i) => pointAt(i, d.value));
-  const polyPoints = poly.map((p) => `${p.x},${p.y}`).join(' ');
 
   return (
     <View style={{ alignItems: 'center' }}>
@@ -51,36 +50,28 @@ export function RadarChart({ data, size = 260 }: Props) {
         {data.map((_, i) => {
           const p = pointAt(i, 100);
           return (
-            <Line
-              key={`axis-${i}`}
-              x1={cx}
-              y1={cy}
-              x2={p.x}
-              y2={p.y}
-              stroke={colors.border}
-              strokeWidth={1}
-            />
+            <Line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke={colors.border} strokeWidth={1} />
           );
         })}
         <Polygon
-          points={polyPoints}
-          fill={colors.accentSoft}
+          points={poly.map((p) => `${p.x},${p.y}`).join(' ')}
+          fill={colors.accentDim}
           stroke={colors.accent}
-          strokeWidth={2}
+          strokeWidth={2.5}
         />
         {poly.map((p, i) => (
-          <Circle key={`pt-${i}`} cx={p.x} cy={p.y} r={3.5} fill={colors.accent} />
+          <Circle key={i} cx={p.x} cy={p.y} r={4} fill={colors.accent} />
         ))}
         {data.map((d, i) => {
           const p = labelAt(i);
           return (
             <SvgText
-              key={`lbl-${i}`}
+              key={`l-${i}`}
               x={p.x}
               y={p.y}
               fill={colors.textSecondary}
               fontSize={10}
-              fontWeight="500"
+              fontWeight="600"
               textAnchor="middle"
               alignmentBaseline="middle"
             >

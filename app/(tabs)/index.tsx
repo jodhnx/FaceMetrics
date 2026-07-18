@@ -14,16 +14,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppBackground } from '@/components/AppBackground';
 import { GlassCard } from '@/components/GlassCard';
 import { ScoreRing } from '@/components/ScoreRing';
-import { RadarChart } from '@/components/RadarChart';
-import { SymmetryHeatmap } from '@/components/SymmetryHeatmap';
-import { MiniDonut, TrendSparkline } from '@/components/Charts';
-import { DisclaimerBanner } from '@/components/DisclaimerBanner';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import {
+  CoachBubble,
+  DeltaBadge,
+  DisclaimerBanner,
+  MetricBar,
+} from '@/components/ui';
+import { compareScans } from '@/services/analysisEngine';
 import { useAnalysis } from '@/context/AnalysisContext';
 import { useTheme } from '@/context/ThemeContext';
-import { DISCLAIMERS, Radii, Spacing, Typography } from '@/constants/theme';
+import { DISCLAIMERS, Layout, Radii, Spacing, Typography } from '@/constants/theme';
 
-export default function Dashboard() {
+export default function HomeScreen() {
   const { colors } = useTheme();
   const { current, history, refreshHistory, setCurrent } = useAnalysis();
   const insets = useSafeAreaInsets();
@@ -34,62 +37,53 @@ export default function Dashboard() {
   }, [refreshHistory]);
 
   const latest = current ?? history[0] ?? null;
-  const trend = history
-    .slice(0, 8)
-    .map((h) => h.overallScore)
-    .reverse();
+  const previous = history.find((h) => h.id !== latest?.id) ?? null;
+  const delta = latest ? compareScans(latest, previous) : null;
 
   if (!latest) {
     return (
       <AppBackground>
         <ScrollView
           contentContainerStyle={{
-            paddingTop: insets.top + Spacing.lg,
-            paddingBottom: 120,
-            paddingHorizontal: Spacing.md,
+            paddingTop: insets.top + Spacing.xl,
+            paddingBottom: 140,
+            paddingHorizontal: Layout.screenPadding,
             flexGrow: 1,
             justifyContent: 'center',
           }}
         >
           <Animated.View entering={FadeInDown.duration(500)}>
-            <Text style={[Typography.caption, { color: colors.accent, letterSpacing: 1.5 }]}>
-              FACEMETRICS AI
-            </Text>
+            <Text style={[Typography.overline, { color: colors.accent }]}>FACEMETRICS AI</Text>
             <Text style={[Typography.hero, { color: colors.text, marginTop: Spacing.sm }]}>
-              Dein Gesicht.{'\n'}Klar analysiert.
+              Dein Gesicht.{'\n'}Klar gemessen.
             </Text>
             <Text style={[Typography.body, { color: colors.textSecondary, marginTop: Spacing.md }]}>
-              Lade ein frontales Foto hoch – gerader Blick, neutrales Gesicht, gute Beleuchtung.
+              Frontales Foto, gerader Blick, neutrales Gesicht, gutes Licht.
             </Text>
             <PrimaryButton
-              title="Ersten Scan starten"
+              title="Quick Scan"
               onPress={() => router.push('/(tabs)/scan')}
               style={{ marginTop: Spacing.xl }}
             />
             <PrimaryButton
-              title="Demo-Analyse laden"
+              title="Demo-Analyse"
               variant="secondary"
               onPress={() =>
                 router.push({
                   pathname: '/analyzing',
-                  params: { uri: 'demo://facemetrics/sample-portrait' },
+                  params: { uri: `demo://sample/${Date.now()}` },
                 })
               }
               style={{ marginTop: Spacing.sm }}
             />
+            <View style={{ marginTop: Spacing.lg }}>
+              <DisclaimerBanner text={DISCLAIMERS.analysis} />
+            </View>
           </Animated.View>
         </ScrollView>
       </AppBackground>
     );
   }
-
-  const shortcuts = [
-    { label: 'Symmetrie', href: '/symmetry', icon: 'git-compare-outline' as const },
-    { label: 'Proportionen', href: '/proportions', icon: 'resize-outline' as const },
-    { label: 'Faktoren', href: '/factors', icon: 'analytics-outline' as const },
-    { label: 'Promi', href: '/celebrity', icon: 'people-outline' as const },
-    { label: 'Wahrnehmung', href: '/perception', icon: 'eye-outline' as const },
-  ];
 
   return (
     <AppBackground>
@@ -97,158 +91,180 @@ export default function Dashboard() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + Spacing.md,
-          paddingBottom: 120,
-          paddingHorizontal: Spacing.md,
+          paddingBottom: 140,
+          paddingHorizontal: Layout.screenPadding,
         }}
       >
-        <View style={styles.topRow}>
+        <View style={styles.top}>
           <View>
-            <Text style={[Typography.caption, { color: colors.accent, letterSpacing: 1.2 }]}>
-              FACEMETRICS AI
-            </Text>
+            <Text style={[Typography.overline, { color: colors.accent }]}>HOME</Text>
             <Text style={[Typography.title1, { color: colors.text }]}>Dashboard</Text>
           </View>
-          {latest.imageUri ? (
-            <Image source={{ uri: latest.imageUri }} style={[styles.avatar, { borderColor: colors.border }]} />
+          {latest.imageUri && !latest.imageUri.startsWith('demo://') ? (
+            <Image
+              source={{ uri: latest.imageUri }}
+              style={[styles.avatar, { borderColor: colors.border }]}
+            />
           ) : (
-            <View style={[styles.avatar, { backgroundColor: colors.accentSoft, borderColor: colors.border }]}>
-              <Ionicons name="person" size={22} color={colors.accent} />
+            <View
+              style={[
+                styles.avatar,
+                {
+                  backgroundColor: colors.accentDim,
+                  borderColor: colors.border,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+              ]}
+            >
+              <Ionicons name="person" size={20} color={colors.accent} />
             </View>
           )}
         </View>
 
-        <Animated.View entering={FadeInDown.delay(80).duration(500)} style={{ alignItems: 'center', marginVertical: Spacing.lg }}>
-          <ScoreRing score={latest.overallScore} label="Gesamtscore" size={180} stroke={12} />
+        <Animated.View
+          entering={FadeInDown.delay(60).duration(500)}
+          style={{ alignItems: 'center', marginTop: Spacing.lg }}
+        >
+          <ScoreRing score={latest.overallScore} label="Gesamtscore" size={180} stroke={13} />
+          {delta ? (
+            <View style={{ marginTop: Spacing.md }}>
+              <DeltaBadge value={delta.overall} />
+            </View>
+          ) : null}
         </Animated.View>
 
-        <DisclaimerBanner text={DISCLAIMERS.attractiveness} />
-
-        <View style={[styles.donutRow, { marginTop: Spacing.lg }]}>
-          <MiniDonut value={latest.symmetryScore} label="Symmetrie" color={colors.success} />
-          <MiniDonut value={latest.goldenRatioScore} label="Golden Ratio" />
-          <MiniDonut value={latest.proportionsScore} label="Proportionen" color={colors.warning} />
+        <View style={{ marginTop: Spacing.lg }}>
+          <DisclaimerBanner text={DISCLAIMERS.analysis} />
         </View>
 
-        {trend.length > 1 ? (
-          <GlassCard style={{ marginTop: Spacing.lg }}>
-            <Text style={[Typography.title3, { color: colors.text }]}>Trend</Text>
-            <Text style={[Typography.footnote, { color: colors.textSecondary, marginBottom: Spacing.sm }]}>
-              Entwicklung deiner letzten Scans
-            </Text>
-            <TrendSparkline values={trend} width={280} height={44} />
-          </GlassCard>
-        ) : null}
+        <View style={styles.statRow}>
+          {[
+            { l: 'Symmetrie', v: latest.symmetryScore },
+            { l: 'Proportionen', v: latest.proportionsScore },
+            { l: 'Golden Ratio', v: latest.goldenRatioScore },
+          ].map((s) => (
+            <GlassCard key={s.l} style={{ flex: 1 }} padding={Spacing.md}>
+              <Text style={[Typography.caption, { color: colors.textSecondary }]}>{s.l}</Text>
+              <Text style={[Typography.title1, { color: colors.text, marginTop: 4 }]}>{s.v}</Text>
+            </GlassCard>
+          ))}
+        </View>
+
+        <PrimaryButton
+          title="Quick Scan"
+          onPress={() => router.push('/(tabs)/scan')}
+          style={{ marginTop: Spacing.lg }}
+        />
+
+        <View style={{ marginTop: Spacing.lg }}>
+          <CoachBubble text={latest.coachSummary} />
+        </View>
 
         <GlassCard style={{ marginTop: Spacing.md }}>
           <Text style={[Typography.title3, { color: colors.text, marginBottom: Spacing.sm }]}>
-            Symmetrie-Heatmap
+            Empfehlungen des Tages
           </Text>
-          <SymmetryHeatmap points={latest.heatmap} height={240} />
-          <PrimaryButton
-            title="Symmetrie im Detail"
-            variant="secondary"
-            onPress={() => {
-              setCurrent(latest);
-              router.push('/symmetry');
-            }}
-            style={{ marginTop: Spacing.md }}
-          />
+          {latest.dailyTips.map((t) => (
+            <View key={t} style={styles.tipRow}>
+              <Ionicons name="sparkles" size={16} color={colors.accent} />
+              <Text style={[Typography.callout, { color: colors.text, flex: 1 }]}>{t}</Text>
+            </View>
+          ))}
         </GlassCard>
 
         <GlassCard style={{ marginTop: Spacing.md }}>
-          <Text style={[Typography.title3, { color: colors.text, marginBottom: Spacing.sm }]}>
-            Merkmals-Radar
-          </Text>
-          <RadarChart data={latest.radar} />
-        </GlassCard>
-
-        <Text style={[Typography.title3, { color: colors.text, marginTop: Spacing.lg, marginBottom: Spacing.sm }]}>
-          Bereiche
-        </Text>
-        <View style={styles.shortcutGrid}>
-          {shortcuts.map((s) => (
+          <View style={styles.sectionHead}>
+            <Text style={[Typography.title3, { color: colors.text }]}>Top-Merkmale</Text>
             <Pressable
-              key={s.label}
               onPress={() => {
                 setCurrent(latest);
-                router.push(s.href as any);
+                router.push(`/results/${latest.id}`);
               }}
-              style={[styles.shortcut, { backgroundColor: colors.surfaceSolid, borderColor: colors.border }]}
             >
-              <Ionicons name={s.icon} size={22} color={colors.accent} />
-              <Text style={[Typography.caption, { color: colors.text, marginTop: 6 }]}>{s.label}</Text>
+              <Text style={[Typography.caption, { color: colors.accent }]}>Alle</Text>
+            </Pressable>
+          </View>
+          {latest.metrics.slice(0, 6).map((m) => (
+            <MetricBar
+              key={m.id}
+              label={m.label}
+              score={m.score}
+              subtitle={`Einfluss ≈ ${m.impact}`}
+              onPress={() => router.push(`/metric/${m.id}`)}
+            />
+          ))}
+        </GlassCard>
+
+        <View style={styles.quickGrid}>
+          {[
+            { t: 'Heatmap', i: 'flame' as const, href: '/heatmap' },
+            { t: 'Ergebnisse', i: 'analytics' as const, href: `/results/${latest.id}` },
+            { t: 'Fortschritt', i: 'trending-up' as const, href: '/(tabs)/progress' },
+            { t: 'Coach', i: 'chatbubbles' as const, href: '/(tabs)/coach' },
+          ].map((q) => (
+            <Pressable
+              key={q.t}
+              onPress={() => {
+                setCurrent(latest);
+                router.push(q.href as any);
+              }}
+              style={[
+                styles.quick,
+                { backgroundColor: colors.surfaceSolid, borderColor: colors.border },
+              ]}
+            >
+              <Ionicons name={q.i} size={22} color={colors.accent} />
+              <Text style={[Typography.caption, { color: colors.text, marginTop: 8 }]}>{q.t}</Text>
             </Pressable>
           ))}
         </View>
-
-        <GlassCard style={{ marginTop: Spacing.lg }}>
-          <Text style={[Typography.title3, { color: colors.text }]}>Stärken</Text>
-          {latest.strengths.slice(0, 3).map((s) => (
-            <View key={s.id} style={styles.listItem}>
-              <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-              <Text style={[Typography.callout, { color: colors.text, flex: 1 }]}>{s.title}</Text>
-              <Text style={[Typography.caption, { color: colors.textSecondary }]}>{s.score}</Text>
-            </View>
-          ))}
-        </GlassCard>
-
-        <GlassCard style={{ marginTop: Spacing.md }}>
-          <Text style={[Typography.title3, { color: colors.text }]}>Verbesserungspotenzial</Text>
-          {latest.improvements.slice(0, 3).map((s) => (
-            <View key={s.id} style={styles.listItem}>
-              <Ionicons name="remove-circle-outline" size={18} color={colors.warning} />
-              <Text style={[Typography.callout, { color: colors.text, flex: 1 }]}>{s.title}</Text>
-              <Text style={[Typography.caption, { color: colors.textSecondary }]}>{s.score}</Text>
-            </View>
-          ))}
-          <PrimaryButton
-            title="Vollständige Ergebnisse"
-            onPress={() => router.push(`/results/${latest.id}`)}
-            style={{ marginTop: Spacing.md }}
-          />
-        </GlassCard>
       </ScrollView>
     </AppBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  topRow: {
+  top: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
   },
-  donutRow: {
+  statRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
   },
-  shortcutGrid: {
+  tipRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+  },
+  sectionHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  quickGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
+    marginTop: Spacing.md,
   },
-  shortcut: {
-    width: '31%',
+  quick: {
+    width: '48%',
     flexGrow: 1,
-    minWidth: '30%',
-    paddingVertical: Spacing.md,
+    minWidth: '46%',
+    paddingVertical: Spacing.lg,
     borderRadius: Radii.md,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
   },
 });

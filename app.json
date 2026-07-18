@@ -2,23 +2,23 @@
   "expo": {
     "name": "FaceMetrics AI",
     "slug": "facemetrics-ai",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "facemetrics",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "ai.facemetrics.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "FaceMetrics AI benötigt die Kamera, um dein Gesicht für die Analyse zu fotografieren.",
-        "NSPhotoLibraryUsageDescription": "FaceMetrics AI benötigt Zugriff auf deine Fotos, um ein frontales Gesichtsbild zu analysieren."
+        "NSCameraUsageDescription": "FaceMetrics AI benötigt die Kamera für die Gesichtsanalyse.",
+        "NSPhotoLibraryUsageDescription": "FaceMetrics AI benötigt Fotos für die Gesichtsanalyse."
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0B0B0F",
+        "backgroundColor": "#07080A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -27,8 +27,7 @@
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES"
       ],
-      "package": "ai.facemetrics.app",
-      "predictiveBackGestureEnabled": false
+      "package": "ai.facemetrics.app"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -41,7 +40,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "FaceMetrics AI benötigt Zugriff auf deine Fotos für die Gesichtsanalyse.",
+          "photosPermission": "FaceMetrics AI benötigt Fotos für die Gesichtsanalyse.",
           "cameraPermission": "FaceMetrics AI benötigt die Kamera für die Gesichtsanalyse."
         }
       ]

@@ -15,20 +15,17 @@ function RootNavigator() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
-          animation: 'fade_from_bottom',
+          animation: 'slide_from_right',
         }}
       >
         <Stack.Screen name="index" />
-        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="analyzing" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="analyzing" options={{ gestureEnabled: false, animation: 'fade' }} />
         <Stack.Screen name="results/[id]" />
-        <Stack.Screen name="feature/[key]" />
-        <Stack.Screen name="symmetry" />
-        <Stack.Screen name="proportions" />
-        <Stack.Screen name="celebrity" />
-        <Stack.Screen name="perception" />
-        <Stack.Screen name="factors" />
+        <Stack.Screen name="metric/[id]" />
+        <Stack.Screen name="exercise/[id]" />
+        <Stack.Screen name="heatmap" />
       </Stack>
     </>
   );

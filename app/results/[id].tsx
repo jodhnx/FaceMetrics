@@ -1,26 +1,24 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppBackground } from '@/components/AppBackground';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { GlassCard } from '@/components/GlassCard';
 import { ScoreRing } from '@/components/ScoreRing';
-import { MetricRow } from '@/components/MetricRow';
-import { DisclaimerBanner } from '@/components/DisclaimerBanner';
+import { RadarChart } from '@/components/RadarChart';
+import { SymmetryHeatmap } from '@/components/SymmetryHeatmap';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import {
+  CoachBubble,
+  DisclaimerBanner,
+  MetricBar,
+} from '@/components/ui';
 import { useAnalysis } from '@/context/AnalysisContext';
 import { useTheme } from '@/context/ThemeContext';
 import { getAnalysisById } from '@/services/storage';
 import type { AnalysisResult } from '@/types/analysis';
-import { DISCLAIMERS, Radii, Spacing, Typography } from '@/constants/theme';
+import { DISCLAIMERS, Layout, Radii, Spacing, Typography } from '@/constants/theme';
 
 export default function ResultsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,56 +54,74 @@ export default function ResultsScreen() {
 
   return (
     <AppBackground>
-      <ScreenHeader title="Ergebnisse" subtitle="AI-Schätzung" showBack />
-      <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: 60 }}>
-        {data.imageUri && !data.imageUri.startsWith('demo://') ? (
-          <Image source={{ uri: data.imageUri }} style={[styles.hero, { borderColor: colors.border }]} />
-        ) : null}
-
-        <View style={{ alignItems: 'center', marginVertical: Spacing.lg }}>
-          <ScoreRing score={data.overallScore} label="Gesamtscore" />
+      <ScreenHeader title="Ergebnisse" subtitle="KI-Schätzung" showBack />
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: Layout.screenPadding,
+          paddingBottom: 60,
+        }}
+      >
+        <View style={{ alignItems: 'center', marginVertical: Spacing.md }}>
+          <ScoreRing score={data.overallScore} label="Gesamtscore" size={170} />
         </View>
 
-        <DisclaimerBanner text={DISCLAIMERS.attractiveness} />
+        <DisclaimerBanner text={DISCLAIMERS.analysis} />
+        <View style={{ marginTop: Spacing.sm }}>
+          <DisclaimerBanner text={DISCLAIMERS.beauty} tone="warning" />
+        </View>
 
-        <View style={styles.quickLinks}>
+        <View style={{ marginTop: Spacing.md }}>
+          <CoachBubble text={data.coachSummary} />
+        </View>
+
+        <View style={styles.chips}>
           {[
-            { label: 'Symmetrie', path: '/symmetry' },
-            { label: 'Proportionen', path: '/proportions' },
-            { label: 'Faktoren', path: '/factors' },
-            { label: 'Wahrnehmung', path: '/perception' },
-          ].map((l) => (
+            { t: 'Heatmap', h: '/heatmap' },
+            { t: 'Coach', h: '/(tabs)/coach' },
+            { t: 'Fortschritt', h: '/(tabs)/progress' },
+          ].map((c) => (
             <Pressable
-              key={l.path}
-              onPress={() => router.push(l.path as any)}
-              style={[styles.chip, { backgroundColor: colors.accentSoft }]}
+              key={c.t}
+              onPress={() => router.push(c.h as any)}
+              style={[styles.chip, { backgroundColor: colors.accentDim }]}
             >
-              <Text style={[Typography.caption, { color: colors.accent, fontWeight: '600' }]}>
-                {l.label}
-              </Text>
+              <Text style={[Typography.caption, { color: colors.accent }]}>{c.t}</Text>
             </Pressable>
           ))}
         </View>
+
+        <GlassCard style={{ marginTop: Spacing.md }}>
+          <Text style={[Typography.title3, { color: colors.text, marginBottom: Spacing.sm }]}>
+            Radar
+          </Text>
+          <RadarChart data={data.radar} />
+        </GlassCard>
+
+        <GlassCard style={{ marginTop: Spacing.md }}>
+          <Text style={[Typography.title3, { color: colors.text, marginBottom: Spacing.sm }]}>
+            Heatmap
+          </Text>
+          <SymmetryHeatmap points={data.heatmap} height={280} />
+        </GlassCard>
 
         <GlassCard style={{ marginTop: Spacing.md }}>
           <Text style={[Typography.title3, { color: colors.text }]}>Stärken</Text>
           {data.strengths.map((s) => (
             <Pressable
               key={s.id}
-              onPress={() => router.push(`/feature/${s.category.toLowerCase()}`)}
+              onPress={() => router.push(`/metric/${s.metricId}`)}
               style={styles.item}
             >
-              <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
               <View style={{ flex: 1 }}>
-                <Text style={[Typography.callout, { color: colors.text }]}>{s.title}</Text>
-                <Text style={[Typography.caption, { color: colors.textSecondary }]}>
-                  {s.explanation}
+                <Text style={[Typography.callout, { color: colors.text, fontWeight: '600' }]}>
+                  {s.title}
                 </Text>
-                <Text style={[Typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
-                  Einfluss auf Score: ≈ {s.impact}
+                <Text style={[Typography.caption, { color: colors.textTertiary }]}>
+                  Einfluss ≈ {s.impact}
                 </Text>
               </View>
-              <Text style={[Typography.callout, { color: colors.text }]}>{s.score}</Text>
+              <Text style={[Typography.title3, { color: colors.text }]}>{s.score}</Text>
             </Pressable>
           ))}
         </GlassCard>
@@ -113,70 +129,63 @@ export default function ResultsScreen() {
         <GlassCard style={{ marginTop: Spacing.md }}>
           <Text style={[Typography.title3, { color: colors.text }]}>Verbesserungspotenzial</Text>
           {data.improvements.map((s) => (
-            <View key={s.id} style={styles.item}>
-              <Ionicons name="ellipse-outline" size={18} color={colors.warning} />
+            <Pressable
+              key={s.id}
+              onPress={() => router.push(`/metric/${s.metricId}`)}
+              style={styles.item}
+            >
+              <Ionicons name="ellipse-outline" size={20} color={colors.warning} />
               <View style={{ flex: 1 }}>
-                <Text style={[Typography.callout, { color: colors.text }]}>{s.title}</Text>
-                <Text style={[Typography.caption, { color: colors.textSecondary }]}>
-                  {s.explanation}
+                <Text style={[Typography.callout, { color: colors.text, fontWeight: '600' }]}>
+                  {s.title}
                 </Text>
-                <Text style={[Typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
-                  Einfluss auf Score: ≈ {s.impact}
+                <Text style={[Typography.caption, { color: colors.textTertiary }]}>
+                  Einfluss ≈ {s.impact}
                 </Text>
               </View>
-              <Text style={[Typography.callout, { color: colors.text }]}>{s.score}</Text>
-            </View>
+              <Text style={[Typography.title3, { color: colors.text }]}>{s.score}</Text>
+            </Pressable>
           ))}
         </GlassCard>
 
         <GlassCard style={{ marginTop: Spacing.md }}>
-          <Text style={[Typography.title3, { color: colors.text, marginBottom: 4 }]}>
-            Attraktivitätsfaktoren
-          </Text>
-          {data.factors.map((f) => (
-            <MetricRow
-              key={f.id}
-              label={f.label}
-              score={f.score}
-              subtitle={f.explanation}
-              onPress={() => router.push(`/feature/${f.id}`)}
+          <Text style={[Typography.title3, { color: colors.text }]}>Alle Messwerte</Text>
+          {data.metrics.map((m) => (
+            <MetricBar
+              key={m.id}
+              label={m.label}
+              score={m.score}
+              subtitle={`${m.value} ${m.unit} · ${m.normRange}`}
+              onPress={() => router.push(`/metric/${m.id}`)}
             />
           ))}
         </GlassCard>
 
         <PrimaryButton
-          title="Promi-Strukturvergleich"
-          variant="secondary"
-          onPress={() => router.push('/celebrity')}
+          title="Neuen Scan starten"
+          onPress={() => router.push('/(tabs)/scan')}
           style={{ marginTop: Spacing.lg }}
         />
+
+        <View style={{ marginTop: Spacing.md }}>
+          <DisclaimerBanner text={DISCLAIMERS.medical} tone="warning" />
+        </View>
       </ScrollView>
     </AppBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: {
-    width: '100%',
-    height: 220,
-    borderRadius: Radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  quickLinks: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
-  },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.md },
   chip: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: Radii.full,
   },
   item: {
     flexDirection: 'row',
     gap: Spacing.sm,
+    alignItems: 'center',
     paddingVertical: Spacing.sm,
-    alignItems: 'flex-start',
   },
 });

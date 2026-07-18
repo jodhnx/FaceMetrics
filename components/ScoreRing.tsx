@@ -23,8 +23,8 @@ interface Props {
 
 export function ScoreRing({
   score,
-  size = 160,
-  stroke = 10,
+  size = 168,
+  stroke = 12,
   label,
   color,
   delay = 0,
@@ -39,29 +39,26 @@ export function ScoreRing({
   useEffect(() => {
     progress.value = 0;
     const t = setTimeout(() => {
-      progress.value = withTiming(score / 100, {
-        duration: 1100,
+      progress.value = withTiming(Math.min(1, score / 100), {
+        duration: 1200,
         easing: Easing.out(Easing.cubic),
       });
     }, delay);
 
-    // Display number animation (web-safe fallback)
     const start = Date.now() + delay;
-    const duration = 1100;
-    let frame: number;
+    let frame = 0;
     const tick = () => {
       const elapsed = Date.now() - start;
       if (elapsed < 0) {
         frame = requestAnimationFrame(tick);
         return;
       }
-      const tNorm = Math.min(1, elapsed / duration);
+      const tNorm = Math.min(1, elapsed / 1200);
       const eased = 1 - Math.pow(1 - tNorm, 3);
       setDisplay(Math.round(score * eased));
       if (tNorm < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
-
     return () => {
       clearTimeout(t);
       cancelAnimationFrame(frame);
@@ -74,13 +71,13 @@ export function ScoreRing({
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{ transform: [{ rotate: '-90deg' }], ...StyleSheet.absoluteFillObject }}>
+      <View style={[StyleSheet.absoluteFill, { transform: [{ rotate: '-90deg' }] }]}>
         <Svg width={size} height={size}>
           <Circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={colors.border}
+            stroke={colors.ringTrack}
             strokeWidth={stroke}
             fill="none"
           />
@@ -97,12 +94,10 @@ export function ScoreRing({
           />
         </Svg>
       </View>
-      <Text style={[Typography.hero, { color: colors.text, fontSize: size * 0.28 }]}>
-        {display}
-      </Text>
+      <Text style={[Typography.hero, { color: colors.text, fontSize: size * 0.26 }]}>{display}</Text>
       {label ? (
-        <Text style={[Typography.caption, { color: colors.textSecondary, marginTop: -4 }]}>
-          {label}
+        <Text style={[Typography.caption, { color: colors.textSecondary, marginTop: -2 }]}>
+          {label.toUpperCase()}
         </Text>
       ) : null}
     </View>

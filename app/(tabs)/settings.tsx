@@ -2,12 +2,12 @@ import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 're
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBackground } from '@/components/AppBackground';
 import { GlassCard } from '@/components/GlassCard';
-import { DisclaimerBanner } from '@/components/DisclaimerBanner';
+import { DisclaimerBanner } from '@/components/ui';
 import { useTheme } from '@/context/ThemeContext';
-import { clearHistory } from '@/services/storage';
 import { useAnalysis } from '@/context/AnalysisContext';
-import { DISCLAIMERS, Radii, Spacing, Typography } from '@/constants/theme';
+import { clearHistory } from '@/services/storage';
 import type { AppSettings } from '@/types/analysis';
+import { DISCLAIMERS, Layout, Radii, Spacing, Typography } from '@/constants/theme';
 
 export default function SettingsScreen() {
   const { colors, settings, updateSettings, isDark } = useTheme();
@@ -16,50 +16,34 @@ export default function SettingsScreen() {
 
   const setTheme = (theme: AppSettings['theme']) => updateSettings({ theme });
 
-  const confirmClear = () => {
-    Alert.alert('Verlauf löschen', 'Alle gespeicherten Scans werden entfernt.', [
-      { text: 'Abbrechen', style: 'cancel' },
-      {
-        text: 'Löschen',
-        style: 'destructive',
-        onPress: async () => {
-          await clearHistory();
-          await refreshHistory();
-        },
-      },
-    ]);
-  };
-
   return (
     <AppBackground>
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + Spacing.md,
-          paddingBottom: 120,
-          paddingHorizontal: Spacing.md,
+          paddingBottom: 140,
+          paddingHorizontal: Layout.screenPadding,
         }}
       >
-        <Text style={[Typography.caption, { color: colors.accent, letterSpacing: 1.2 }]}>APP</Text>
-        <Text style={[Typography.title1, { color: colors.text }]}>Einstellungen</Text>
+        <Text style={[Typography.overline, { color: colors.accent }]}>APP</Text>
+        <Text style={[Typography.title1, { color: colors.text }]}>Mehr</Text>
 
         <GlassCard style={{ marginTop: Spacing.lg }}>
           <Text style={[Typography.title3, { color: colors.text, marginBottom: Spacing.sm }]}>
             Erscheinungsbild
           </Text>
           <View style={styles.themeRow}>
-            {(['system', 'light', 'dark'] as const).map((t) => {
-              const active =
-                settings.theme === t ||
-                (t === 'system' && settings.theme === 'system');
-              const label = t === 'system' ? 'System' : t === 'light' ? 'Hell' : 'Dunkel';
+            {(['dark', 'light', 'system'] as const).map((t) => {
+              const label = t === 'dark' ? 'Dunkel' : t === 'light' ? 'Hell' : 'System';
+              const active = settings.theme === t;
               return (
                 <Pressable
                   key={t}
                   onPress={() => setTheme(t)}
                   style={[
-                    styles.themeChip,
+                    styles.chip,
                     {
-                      backgroundColor: settings.theme === t ? colors.accent : colors.accentSoft,
+                      backgroundColor: active ? colors.accent : colors.accentDim,
                       borderColor: colors.border,
                     },
                   ]}
@@ -67,7 +51,7 @@ export default function SettingsScreen() {
                   <Text
                     style={[
                       Typography.caption,
-                      { color: settings.theme === t ? '#fff' : colors.text, fontWeight: '600' },
+                      { color: active ? colors.accentText : colors.text, fontWeight: '700' },
                     ]}
                   >
                     {label}
@@ -77,7 +61,7 @@ export default function SettingsScreen() {
             })}
           </View>
           <Text style={[Typography.footnote, { color: colors.textSecondary, marginTop: Spacing.sm }]}>
-            Aktuell: {isDark ? 'Dark Mode' : 'Light Mode'}
+            Standard: Dark Mode · aktuell {isDark ? 'dunkel' : 'hell'}
           </Text>
         </GlassCard>
 
@@ -88,9 +72,7 @@ export default function SettingsScreen() {
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
               <Text style={[Typography.callout, { color: colors.text }]}>Verlauf speichern</Text>
-              <Text style={[Typography.caption, { color: colors.textSecondary }]}>
-                Scans lokal auf diesem Gerät
-              </Text>
+              <Text style={[Typography.caption, { color: colors.textSecondary }]}>Lokal auf dem Gerät</Text>
             </View>
             <Switch
               value={settings.saveHistory}
@@ -102,7 +84,7 @@ export default function SettingsScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[Typography.callout, { color: colors.text }]}>Fotos nach Analyse löschen</Text>
               <Text style={[Typography.caption, { color: colors.textSecondary }]}>
-                Bilddaten werden nicht im Verlauf behalten
+                Bild nicht im Verlauf behalten
               </Text>
             </View>
             <Switch
@@ -114,19 +96,40 @@ export default function SettingsScreen() {
         </GlassCard>
 
         <GlassCard style={{ marginTop: Spacing.md }}>
-          <Pressable onPress={confirmClear}>
-            <Text style={[Typography.callout, { color: colors.danger, fontWeight: '600' }]}>
+          <Pressable
+            onPress={() =>
+              Alert.alert('Verlauf löschen?', 'Alle Scans werden entfernt.', [
+                { text: 'Abbrechen', style: 'cancel' },
+                {
+                  text: 'Löschen',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await clearHistory();
+                    await refreshHistory();
+                  },
+                },
+              ])
+            }
+          >
+            <Text style={[Typography.callout, { color: colors.danger, fontWeight: '700' }]}>
               Verlauf löschen
             </Text>
           </Pressable>
         </GlassCard>
 
-        <View style={{ marginTop: Spacing.lg }}>
-          <DisclaimerBanner text={DISCLAIMERS.general} />
+        <View style={{ marginTop: Spacing.lg, gap: Spacing.sm }}>
+          <DisclaimerBanner text={DISCLAIMERS.analysis} />
+          <DisclaimerBanner text={DISCLAIMERS.beauty} tone="warning" />
+          <DisclaimerBanner text={DISCLAIMERS.medical} tone="warning" />
         </View>
 
-        <Text style={[Typography.caption, { color: colors.textTertiary, textAlign: 'center', marginTop: Spacing.xl }]}>
-          FaceMetrics AI · v1.0.0{'\n'}DSGVO-orientierte lokale Speicherung
+        <Text
+          style={[
+            Typography.caption,
+            { color: colors.textTertiary, textAlign: 'center', marginTop: Spacing.xl },
+          ]}
+        >
+          FaceMetrics AI · v2.0{'\n'}Mobile First · On-Device-orientiert
         </Text>
       </ScrollView>
     </AppBackground>
@@ -135,16 +138,12 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   themeRow: { flexDirection: 'row', gap: Spacing.sm },
-  themeChip: {
+  chip: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 14,
     borderRadius: Radii.full,
     alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth,
   },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
 });
